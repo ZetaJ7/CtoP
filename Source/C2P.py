@@ -199,13 +199,13 @@ def main():
     ######################## Training Data ###############################
     ######################################################################
     workdir = os.getcwd()
-    test_time = 4
+    test_info = 1
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--T", type=int,default=201)
     parser.add_argument("--N", type=int,default=157859)
     parser.add_argument("--mode", type=str,default='train')
-    parser.add_argument("--model_path",type=str,default='/'.join(workdir.split('/')[:-1])+'/Model/test_{}/'.format(test_time))
+    parser.add_argument("--model_path",type=str,default='/'.join(workdir.split('/')[:-1])+'/Model/test_{}/'.format(test_info))
     args = parser.parse_args()
     T_data = args.T
     N_data = args.N
@@ -240,27 +240,27 @@ def main():
                 t_eqns, x_eqns, y_eqns,
                 layers, batch_size,
                 Pec=100, Rey=100)
-    print('-----Model Class set completed!-----')
+    print('-----Model Class set Completed-----')
 
     # Training parameters
     if Running_Mode=='train':
-        total_time = 60
+        total_time = 3600*15
         learning_rate = 1e-3
         tgap = 0.08
-        print('Working on [{}] mode:training.................'.format(Running_Mode))
+        print('Working on [TRAIN] mode:Traning time:{}.................'.format(Running_Mode,total_time/3600.0))
         model.train(total_time = total_time, learning_rate=learning_rate)
 
     #Weighs output
     if Running_Mode !='input':
-        print('Working on [{}] mode:Weighs saving.............'.format(Running_Mode))
+        print('Working on [{}] mode:Weighs saving.............')
         fname='test_model.ckpt'
-        filepath='/'.join(workdir.split('/')[:-1])+'/Model/test_{}'.format(test_time)
+        filepath='/'.join(workdir.split('/')[:-1])+'/Model/test_{}'.format(test_info)
         file=filepath+'/'+fname
         model.w_extract(save_file=file)
 
     # Weighs input
     if Running_Mode == 'input':
-        print('Working on [{}] mode:Weighs loading.............'.format(Running_Mode))
+        print('Working on [INPUT] mode:Weighs loading.............')
         model.w_input(model_path=model_path)
 
     # Test Data
@@ -326,7 +326,7 @@ def main():
     savemat_path='/'.join(workdir.split('/')[:-1])+'/Results'
     if not os.path.exists(savemat_path):
         os.makedirs(savemat_path)
-    savemat_name='C2P_result_{}_test{}.mat'.format(Running_Mode,test_time)
+    savemat_name='C2P_result_{}_test{}.mat'.format(Running_Mode,test_info)
     savefile=savemat_path+'/'+savemat_name
     scipy.io.savemat(savefile,{'C_pred': C_pred, 'U_pred': U_pred, 'V_pred': V_pred, 'P_pred': P_pred,
                                'Error c':error_c, 'Error u':error_u,'Error v':error_v, 'Error p':error_p})
