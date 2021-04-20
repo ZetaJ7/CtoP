@@ -172,11 +172,37 @@ class C2P(object):
 
 def main():
     batch_size = 10000
-
     layers = [3] + 10 * [4 * 50] + [4]
 
+    workdir = os.getcwd()
+    test_info = 1
+
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--T", type=int, default=201)
+    parser.add_argument("--N", type=int, default=30189)
+    parser.add_argument("--mode", type=str, default='train')
+    parser.add_argument("--model_path", type=str,default='/'.join(workdir.split('/')[:-1]) + '/Model/test_{}/'.format(test_info))
+    parser.add_argument("--data", type=str, default='../Data/Cylinder2D.mat')
+    parser.add_argument("--time", type=int, default=60)
+    parser.add_argument("--lr", type=float, default=1e-3)
+    args = parser.parse_args()
+    T_data = args.T
+    N_data = args.N
+
+    Running_Mode = args.mode
+    model_path = args.model_path
+    if Running_Mode=='input':
+        if not os.path.exists(model_path):
+            raise EnvironmentError('Model path not exist, Please check!')
+
+    datafile=args.data
+    total_time =args.time
+    learning_rate = args.lr
+    origin_fname = (datafile.split('/')[-1]).split('.')[0]
+
     # Load Data
-    data = scipy.io.loadmat('../Data/Cylinder2D_flower.mat')
+
+    data = scipy.io.loadmat(datafile)
 
     t_star = data['t_star']  # T x 1
     x_star = data['x_star']  # N x 1
@@ -195,31 +221,16 @@ def main():
     X_star = np.tile(x_star, (1, T))  # N x T
     Y_star = np.tile(y_star, (1, T))  # N x T
 
-    ######################################################################
-    ######################## Training Data ###############################
-    ######################################################################
-    workdir = os.getcwd()
-    test_info = 1
-
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--T", type=int,default=201)
-    parser.add_argument("--N", type=int,default=157859)
-    parser.add_argument("--mode", type=str,default='train')
-    parser.add_argument("--model_path",type=str,default='/'.join(workdir.split('/')[:-1])+'/Model/test_{}/'.format(test_info))
-    args = parser.parse_args()
-    T_data = args.T
-    N_data = args.N
-    Running_Mode = args.mode
-    model_path=args.model_path
-    if Running_Mode=='input':
-        if not os.path.exists(model_path):
-            raise EnvironmentError('Model path not exist, Please check!')
     # T_data = int(sys.argv[1])
     # N_data = int(sys.argv[2])
     # Running_Mode=sys.argv[3]
 
     if Running_Mode not in ['train','input']:
         raise ValueError('Wrong Running mode, please check!')
+
+    ######################################################################
+    ######################## Training Data ###############################
+    ######################################################################
     idx_t = np.concatenate([np.array([0]), np.random.choice(T - 2, T_data - 2, replace=False) + 1, np.array([T - 1])])
     idx_x = np.random.choice(N, N_data, replace=False)
     t_data = T_star[:, idx_t][idx_x, :].flatten()[:, None]
@@ -244,9 +255,6 @@ def main():
 
     # Training parameters
     if Running_Mode=='train':
-        total_time = 3600*15
-        learning_rate = 1e-3
-        tgap = 0.08
         print('Working on [TRAIN] mode:Traning time:{}.................'.format(Running_Mode,total_time/3600.0))
         model.train(total_time = total_time, learning_rate=learning_rate)
 
@@ -326,10 +334,11 @@ def main():
     savemat_path='/'.join(workdir.split('/')[:-1])+'/Results'
     if not os.path.exists(savemat_path):
         os.makedirs(savemat_path)
-    savemat_name='C2P_result_{}_test{}.mat'.format(Running_Mode,test_info)
+    savemat_name='C2P_result_{}_{}_test{}.mat'.format(origin_fname,Running_Mode,test_info)
     savefile=savemat_path+'/'+savemat_name
     scipy.io.savemat(savefile,{'C_pred': C_pred, 'U_pred': U_pred, 'V_pred': V_pred, 'P_pred': P_pred,
                                'Error c':error_c, 'Error u':error_u,'Error v':error_v, 'Error p':error_p})
+    print('---------------Mission accomplished:{}.-----------------------'.format(savemat_name))
 
 
 if __name__ == "__main__":
