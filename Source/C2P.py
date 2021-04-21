@@ -90,7 +90,7 @@ class C2P(object):
 
         self.sess = tf_session()
 
-    def train(self, total_time, learning_rate):
+    def train(self, total_time, learning_rate,test_info):
 
         N_data = self.t_data.shape[0]
         N_eqns = self.t_eqns.shape[0]
@@ -149,6 +149,15 @@ class C2P(object):
                 sys.stdout.flush()
                 start_time = time.time()
             it += 1
+
+        #Training Record output
+        tr_record='/home/ljj/PycharmWork/CtoP/Results/tr_record.txt'
+        with open(tr_record,"a") as f:
+            f.write('\n'+'-----------Training Record: [test_info={}]--------------\n'.format(test_info)+
+                    'Finish time:{}\n'.format(time.strftime('%Y-%m-%d %H:%M:%S'))+
+                    'Final Loss={};\n'.format(loss_value)+
+                    'Learning Rate={};\n'.format(learning_rate)+
+                    'Traning time={}s({}m,{}h);\n'.format(total_time,round(total_time/60.0,2),round(total_time/3600.0,2)))
         print('--------------------------Model Train Completed--------------------------')
 
     def predict(self, t_star, x_star, y_star):
@@ -175,20 +184,20 @@ def main():
     layers = [3] + 10 * [4 * 50] + [4]
 
     workdir = os.getcwd()
-    test_info = 1
-
+    test_info='0'
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--T", type=int, default=201)
     parser.add_argument("--N", type=int, default=30189)
     parser.add_argument("--mode", type=str, default='train')
+    parser.add_argument("--test_info", type=str, default='1')
     parser.add_argument("--model_path", type=str,default='/'.join(workdir.split('/')[:-1]) + '/Model/test_{}/'.format(test_info))
     parser.add_argument("--data", type=str, default='../Data/Cylinder2D.mat')
     parser.add_argument("--time", type=int, default=60)
     parser.add_argument("--lr", type=float, default=1e-3)
     args = parser.parse_args()
+
     T_data = args.T
     N_data = args.N
-
     Running_Mode = args.mode
     model_path = args.model_path
     if Running_Mode=='input':
@@ -199,6 +208,7 @@ def main():
     total_time =args.time
     learning_rate = args.lr
     origin_fname = (datafile.split('/')[-1]).split('.')[0]
+    test_info=args.test_info
 
     # Load Data
 
@@ -256,7 +266,7 @@ def main():
     # Training parameters
     if Running_Mode=='train':
         print('Working on [TRAIN] mode:Traning time:{}.................'.format(Running_Mode,total_time/3600.0))
-        model.train(total_time = total_time, learning_rate=learning_rate)
+        model.train(total_time = total_time, learning_rate=learning_rate,test_info=test_info)
 
     #Weighs output
     if Running_Mode !='input':
@@ -265,6 +275,10 @@ def main():
         filepath='/'.join(workdir.split('/')[:-1])+'/Model/test_{}'.format(test_info)
         file=filepath+'/'+fname
         model.w_extract(save_file=file)
+        tr_record = '/home/ljj/PycharmWork/CtoP/Results/tr_record.txt'
+        with open(tr_record, "a") as f:
+            f.write('Model Saved:{}.\n'.format(file)+'---------------------------------------------------------\n'+' \n')
+        print('--------------------------Model Train Completed--------------------------')
 
     # Weighs input
     if Running_Mode == 'input':
@@ -302,6 +316,12 @@ def main():
     U_pred = 0 * U_star
     V_pred = 0 * V_star
     P_pred = 0 * P_star
+
+    L2c= 0 * C_star
+    L2u= 0 * U_star
+    L2v= 0 * V_star
+    L2p= 0 * P_star
+
     for snap in range(0, t_star.shape[0]):
         t_test = T_star[:, snap:snap + 1]
         x_test = X_star[:, snap:snap + 1]
@@ -326,10 +346,15 @@ def main():
         error_v = relative_error(v_pred, v_test)
         error_p = relative_error(p_pred - np.mean(p_pred), p_test - np.mean(p_test))
 
-        print('Error c: %e' % (error_c))
-        print('Error u: %e' % (error_u))
-        print('Error v: %e' % (error_v))
-        print('Error p: %e' % (error_p))
+        L2c[:, snap:snap + 1] = error_c
+        L2u[:, snap:snap + 1] = error_u
+        L2v[:, snap:snap + 1] = error_v
+        L2p[:, snap:snap + 1] = error_p
+
+        # print('Error c: %e' % (error_c))
+        # print('Error u: %e' % (error_u))
+        # print('Error v: %e' % (error_v))
+        # print('Error p: %e' % (error_p))
 
     savemat_path='/'.join(workdir.split('/')[:-1])+'/Results'
     if not os.path.exists(savemat_path):
@@ -337,7 +362,8 @@ def main():
     savemat_name='C2P_result_{}_{}_test{}.mat'.format(origin_fname,Running_Mode,test_info)
     savefile=savemat_path+'/'+savemat_name
     scipy.io.savemat(savefile,{'C_pred': C_pred, 'U_pred': U_pred, 'V_pred': V_pred, 'P_pred': P_pred,
-                               'Error c':error_c, 'Error u':error_u,'Error v':error_v, 'Error p':error_p})
+                               'Error c':L2c, 'Error u':L2u, 'Error v':L2v, 'Error p':L2p})
+
     print('---------------Mission accomplished:{}.-----------------------'.format(savemat_name))
 
 
