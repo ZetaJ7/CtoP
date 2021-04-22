@@ -157,7 +157,7 @@ class C2P(object):
                     'Finish time:{}\n'.format(time.strftime('%Y-%m-%d %H:%M:%S'))+
                     'Final Loss={};\n'.format(loss_value)+
                     'Learning Rate={};\n'.format(learning_rate)+
-                    'Traning time={}s({}m,{}h);\n'.format(total_time,round(total_time/60.0,2),round(total_time/3600.0,2)))
+                    'Training time={}s({}m,{}h);\n'.format(total_time,round(total_time/60.0,2),round(total_time/3600.0,2)))
         print('--------------------------Model Train Completed--------------------------')
 
     def predict(self, t_star, x_star, y_star):
@@ -265,7 +265,7 @@ def main():
 
     # Training parameters
     if Running_Mode=='train':
-        print('Working on [TRAIN] mode:Traning time:{}.................'.format(Running_Mode,total_time/3600.0))
+        print('Working on [TRAIN] mode:\nTraning time:{}h.................'.format(Running_Mode,round(total_time/3600.0)))
         model.train(total_time = total_time, learning_rate=learning_rate,test_info=test_info)
 
     #Weighs output

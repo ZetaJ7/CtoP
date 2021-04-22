@@ -91,7 +91,7 @@ class neural_net(object):
         saver = tf.compat.v1.train.Saver(max_to_keep=1)
         module_file = tf.train.latest_checkpoint(model_path)
         saver.restore(sess, module_file)
-        print('------------Model Weights read Completed: {}.--------------'.format(model_path))
+        print('------------Model Weights read Completed: {}--------------'.format(model_path))
 
     def save_weights(self,sess,save_file):
         saver = tf.compat.v1.train.Saver(max_to_keep=1)
@@ -100,7 +100,7 @@ class neural_net(object):
         # b0=self.biases
         # g0=self.gammas
         # var_dict={'weights':w0,}
-        print('-------------Model Weights Saved: {}.-----------------------'.format(save_file))
+        print('-------------Model Weights Saved: {}-----------------------'.format(save_file))
 
 
 def Navier_Stokes_2D(c, u, v, p, t, x, y, Pec, Rey):
